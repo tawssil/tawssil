@@ -16,6 +16,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tawssil",
   description: "Bestel eenvoudig bij restaurants in Al Hoceima",
+
+  manifest: "/manifest.json",
+
+  themeColor: "#000000",
+
+  appleWebApp: {
+    capable: true,
+    title: "Tawssil",
+    statusBarStyle: "default",
+  },
+
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,10 +43,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-zinc-900`}
       >
-        {/* Header (overal zichtbaar) */}
         <SiteHeader />
 
-        {/* Page content */}
         <main className="mx-auto min-h-[calc(100vh-64px)] max-w-6xl px-6 py-8">
           {children}
         </main>
