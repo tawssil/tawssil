@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type StatusResp =
@@ -9,7 +9,16 @@ type StatusResp =
   | { ok: false; error: string };
 
 export default function ReturnPage() {
+  return (
+    <Suspense fallback={<div className="p-10">Laden...</div>}>
+      <ReturnContent />
+    </Suspense>
+  );
+}
+
+function ReturnContent() {
   const sp = useSearchParams();
+
   const orderId = useMemo(() => Number(sp.get("order_id")), [sp]);
 
   const [loading, setLoading] = useState(true);
@@ -29,8 +38,12 @@ export default function ReturnPage() {
       try {
         const r = await fetch("/api/payment/mollie/status", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_id: orderId }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            order_id: orderId,
+          }),
         });
 
         const j = (await r.json().catch(() => null)) as StatusResp | null;
@@ -38,9 +51,14 @@ export default function ReturnPage() {
         if (cancelled) return;
 
         if (!r.ok || !j) {
-          setResp({ ok: false, error: (j as any)?.error ?? "Status check failed" });
+          setResp({
+            ok: false,
+            error: (j as any)?.error ?? "Status check failed",
+          });
+
           setMsg("Kon betaling niet controleren.");
           setLoading(false);
+
           return;
         }
 
@@ -48,22 +66,32 @@ export default function ReturnPage() {
 
         if (j.ok) {
           const ps = String(j.payment_status ?? "").toLowerCase();
-          if (ps === "paid") setMsg("✅ Betaling gelukt! Dankjewel.");
-          else if (ps === "failed") setMsg("❌ Betaling mislukt.");
-          else if (ps === "canceled" || ps === "cancelled") setMsg("⚠️ Betaling geannuleerd.");
-          else setMsg("⏳ Betaling staat nog op pending. Check later opnieuw.");
+
+          if (ps === "paid") {
+            setMsg("✅ Betaling gelukt! Dankjewel.");
+          } else if (ps === "failed") {
+            setMsg("❌ Betaling mislukt.");
+          } else if (ps === "canceled" || ps === "cancelled") {
+            setMsg("⚠️ Betaling geannuleerd.");
+          } else {
+            setMsg("⏳ Betaling staat nog op pending. Check later opnieuw.");
+          }
         } else {
           setMsg(j.error);
         }
       } catch (e: any) {
         if (cancelled) return;
+
         setMsg(e?.message ?? "Onbekende fout");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     run();
+
     return () => {
       cancelled = true;
     };
@@ -74,14 +102,23 @@ export default function ReturnPage() {
       <h1 className="text-3xl font-bold">Betaling</h1>
 
       <div className="mt-4 rounded border p-4">
-        <div className="text-lg font-semibold">{msg}</div>
+        <div className="text-lg font-semibold">
+          {msg}
+        </div>
+
         <div className="mt-2 text-sm opacity-80">
-          Order ID: <span className="opacity-100">{Number.isFinite(orderId) ? orderId : "—"}</span>
+          Order ID:{" "}
+          <span className="opacity-100">
+            {Number.isFinite(orderId) ? orderId : "—"}
+          </span>
         </div>
       </div>
 
       <div className="mt-4 flex gap-2">
-        <Link href="/" className="rounded border px-3 py-2 text-sm hover:bg-white/5">
+        <Link
+          href="/"
+          className="rounded border px-3 py-2 text-sm hover:bg-white/5"
+        >
           Terug naar home
         </Link>
 

@@ -113,7 +113,7 @@ export default function RestaurantOrdersPage() {
       return;
     }
 
-    setOrders((data as Order[]) ?? []);
+    setOrders((data as unknown as Order[]) ?? []);
     setLoading(false);
   }
 

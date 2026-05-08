@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
@@ -17,6 +17,14 @@ type CartItem = {
 };
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="p-10">Laden...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const params = useSearchParams();
 
   const restaurantId = Number(params.get("restaurant_id"));
@@ -164,7 +172,6 @@ export default function CheckoutPage() {
 
       if (paymentMethod === "cash") {
         window.location.href = `/order-success?id=${order.id}&payment_method=cash`;
-
         return;
       }
 
@@ -212,7 +219,9 @@ export default function CheckoutPage() {
               className="flex items-center justify-between gap-4"
             >
               <div>
-                <div className="font-medium">{c.item?.name ?? "Onbekend product"}</div>
+                <div className="font-medium">
+                  {c.item?.name ?? "Onbekend product"}
+                </div>
                 <div className="text-sm text-zinc-500">
                   {Number(c.item?.price ?? 0).toFixed(2)} MAD
                 </div>
@@ -261,6 +270,8 @@ export default function CheckoutPage() {
 
       <div className="space-y-3 rounded-xl border p-4">
         <input
+          id="checkout-name"
+          name="name"
           placeholder="Naam"
           className="w-full rounded border px-3 py-2"
           value={name}
@@ -268,6 +279,8 @@ export default function CheckoutPage() {
         />
 
         <input
+          id="checkout-phone"
+          name="phone"
           placeholder="Telefoon"
           className="w-full rounded border px-3 py-2"
           value={phone}
@@ -275,6 +288,8 @@ export default function CheckoutPage() {
         />
 
         <input
+          id="checkout-address"
+          name="address"
           placeholder="Adres"
           className="w-full rounded border px-3 py-2"
           value={address}
@@ -287,6 +302,7 @@ export default function CheckoutPage() {
 
         <label className="flex items-center gap-2">
           <input
+            name="payment-method"
             type="radio"
             value="cash"
             checked={paymentMethod === "cash"}
@@ -297,6 +313,7 @@ export default function CheckoutPage() {
 
         <label className="flex items-center gap-2">
           <input
+            name="payment-method"
             type="radio"
             value="online"
             checked={paymentMethod === "online"}

@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<div className="p-10">Laden...</div>}>
+      <OrderSuccessContent />
+    </Suspense>
+  );
+}
+
+function OrderSuccessContent() {
   const params = useSearchParams();
+
   const orderId = params.get("id");
   const paymentMethod = params.get("payment_method");
 
@@ -29,10 +39,14 @@ export default function OrderSuccessPage() {
 
         <div className="mt-6 rounded-xl bg-zinc-50 p-4 text-sm text-zinc-700">
           <div className="font-medium">Bestelgegevens</div>
+
           <div className="mt-2">
             Ordernummer:{" "}
-            <span className="font-semibold">#{orderId ?? "onbekend"}</span>
+            <span className="font-semibold">
+              #{orderId ?? "onbekend"}
+            </span>
           </div>
+
           <div className="mt-1">
             Betaalmethode:{" "}
             <span className="font-semibold">
