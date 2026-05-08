@@ -4,6 +4,8 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig = {
   reactStrictMode: true,
+
+  turbopack: {},
 };
 
 export default withPWA({
