@@ -369,17 +369,19 @@ export default function RestaurantPage({
                     key={item.id}
                     className="overflow-hidden rounded-[28px] border bg-white shadow-sm transition hover:shadow-md"
                   >
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="h-52 w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-52 items-center justify-center bg-zinc-100 text-sm text-zinc-500">
-                        Geen foto
-                      </div>
-                    )}
+                    <div className="flex h-52 w-full items-center justify-center overflow-hidden bg-zinc-100">
+  {item.image_url ? (
+    <img
+      src={item.image_url}
+      alt={item.name}
+      className="h-full w-full object-contain p-4"
+    />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
+      Geen foto
+    </div>
+  )}
+</div>
 
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-3">
