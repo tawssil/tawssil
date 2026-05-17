@@ -374,7 +374,11 @@ export default function RestaurantPage({
     <img
       src={item.image_url}
       alt={item.name}
-      className="h-full w-full object-cover object-center"
+      className={`h-full w-full ${
+        categoryName.toLowerCase().includes("drink")
+          ? "object-contain p-4"
+          : "object-cover object-center"
+      }`}
     />
   ) : (
     <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
