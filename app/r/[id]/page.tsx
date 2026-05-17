@@ -367,18 +367,14 @@ export default function RestaurantPage({
                 return (
                   <div
                     key={item.id}
-                    className="overflow-hidden rounded-[28px] border bg-white shadow-sm transition hover:shadow-md"
+                    className="group overflow-hidden rounded-[30px] border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                   >
                     <div className="h-48 w-full overflow-hidden bg-zinc-100">
   {item.image_url ? (
     <img
       src={item.image_url}
       alt={item.name}
-      className={`h-full w-full ${
-        categoryName.toLowerCase().includes("drink")
-          ? "object-contain p-4"
-          : "object-cover object-center"
-      }`}
+      className="h-full w-full object-contain p-5"
     />
   ) : (
     <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
@@ -387,10 +383,10 @@ export default function RestaurantPage({
   )}
 </div>
 
-                    <div className="p-5">
+                    <div className="space-y-4 p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-lg font-semibold tracking-tight">
+                          <div className="text-xl font-bold tracking-tight text-zinc-900">
                             {item.name}
                           </div>
 
@@ -400,7 +396,7 @@ export default function RestaurantPage({
                           </div>
                         </div>
 
-                        <div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium">
+                        <div className="rounded-full bg-black px-3 py-1 text-sm font-semibold text-white shadow-sm">
                           {Number(item.price).toFixed(2)} MAD
                         </div>
                       </div>
@@ -409,7 +405,7 @@ export default function RestaurantPage({
                         <button
                           onClick={() => addToCart(item)}
                           disabled={!openState.isOpen}
-                          className="inline-flex rounded-xl bg-black px-4 py-2 text-sm text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:bg-zinc-800 disabled:opacity-50"
                         >
                           Voeg toe
                         </button>
