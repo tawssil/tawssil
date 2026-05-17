@@ -369,16 +369,12 @@ export default function RestaurantPage({
                     key={item.id}
                     className="overflow-hidden rounded-[28px] border bg-white shadow-sm transition hover:shadow-md"
                   >
-                    <div className="flex h-48 w-full items-center justify-center overflow-hidden bg-zinc-100">
+                    <div className="h-48 w-full overflow-hidden bg-zinc-100">
   {item.image_url ? (
     <img
       src={item.image_url}
       alt={item.name}
-      className={`h-full w-full p-3 ${
-        categoryName.toLowerCase().includes("drink")
-          ? "object-contain"
-          : "object-cover"
-      }`}
+      className="h-full w-full object-cover"
     />
   ) : (
     <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
