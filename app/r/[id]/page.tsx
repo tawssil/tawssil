@@ -34,6 +34,14 @@ type MenuItem = {
   image_url: string | null;
 };
 
+type Review = {
+  id: number;
+  customer_name: string | null;
+  rating: number;
+  review: string | null;
+  created_at: string;
+};
+
 export default function RestaurantPage({
   params,
 }: {
@@ -42,18 +50,17 @@ export default function RestaurantPage({
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [cart, setCart] = useState<Record<number, number>>({});
 
-  const restaurantIdPromise = params;
-
   useEffect(() => {
-    (async () => {
+    async function load() {
       setErr(null);
       setLoading(true);
 
-      const { id } = await restaurantIdPromise;
+      const { id } = await params;
       const restaurantId = Number(id);
 
       if (!Number.isFinite(restaurantId) || restaurantId <= 0) {
@@ -118,18 +125,26 @@ export default function RestaurantPage({
         return;
       }
 
+      const { data: reviewData } = await supabaseBrowser
+        .from("reviews")
+        .select("id, customer_name, rating, review, created_at")
+        .eq("restaurant_id", restaurantId)
+        .order("created_at", { ascending: false });
+
       setRestaurant(restaurantData as Restaurant);
       setCategories((categoryData as Category[]) ?? []);
       setItems((itemData as MenuItem[]) ?? []);
+      setReviews((reviewData as Review[]) ?? []);
       setLoading(false);
-    })();
-  }, [restaurantIdPromise]);
+    }
+
+    load();
+  }, [params]);
 
   function addToCart(item: MenuItem) {
     if (!restaurant) return;
 
     const openState = getOpenState(restaurant.opening_hours);
-
     if (!openState.isOpen) return;
 
     setCart((prev) => ({
@@ -166,6 +181,17 @@ export default function RestaurantPage({
       return sum + qty * Number(item.price ?? 0);
     }, 0);
   }, [cart, items]);
+
+  const averageRating = useMemo(() => {
+    if (reviews.length === 0) return null;
+
+    const total = reviews.reduce(
+      (sum, review) => sum + Number(review.rating ?? 0),
+      0
+    );
+
+    return total / reviews.length;
+  }, [reviews]);
 
   const cartItemsForCheckout = useMemo(() => {
     return Object.entries(cart)
@@ -224,16 +250,9 @@ export default function RestaurantPage({
   }
 
   const openState = getOpenState(restaurant.opening_hours);
-
   const minimumOrder = Number(restaurant.minimum_order ?? 0);
-
-  const belowMinimum =
-    subtotal > 0 && subtotal < minimumOrder;
-
-  const remaining = Math.max(
-    0,
-    minimumOrder - subtotal
-  );
+  const belowMinimum = subtotal > 0 && subtotal < minimumOrder;
+  const remaining = Math.max(0, minimumOrder - subtotal);
 
   return (
     <div className="space-y-8 pb-40">
@@ -244,7 +263,6 @@ export default function RestaurantPage({
         ← Terug
       </Link>
 
-      {/* HERO */}
       <section className="overflow-hidden rounded-[32px] border bg-white shadow-sm">
         {restaurant.cover_url ? (
           <img
@@ -292,7 +310,9 @@ export default function RestaurantPage({
 
                 <div className="mt-3 flex flex-wrap gap-2 text-sm">
                   <span className="rounded-full bg-zinc-100 px-3 py-1">
-                    ⭐ {Number(restaurant.rating ?? 4.5).toFixed(1)}
+                    ⭐{" "}
+                    {averageRating ? averageRating.toFixed(1) : "Nieuw"}{" "}
+                    {reviews.length > 0 ? `(${reviews.length})` : ""}
                   </span>
 
                   <span className="rounded-full bg-zinc-100 px-3 py-1">
@@ -300,24 +320,18 @@ export default function RestaurantPage({
                   </span>
 
                   <span className="rounded-full bg-zinc-100 px-3 py-1">
-                    {Number(
-                      restaurant.delivery_fee ?? 0
-                    ).toFixed(2)}{" "}
-                    MAD
+                    {Number(restaurant.delivery_fee ?? 0).toFixed(2)} MAD
                   </span>
 
                   <span className="rounded-full bg-zinc-100 px-3 py-1">
-                    Minimum{" "}
-                    {minimumOrder.toFixed(2)} MAD
+                    Minimum {minimumOrder.toFixed(2)} MAD
                   </span>
                 </div>
 
                 <div className="mt-4 space-y-1 text-sm text-zinc-600">
                   <div>{restaurant.address}</div>
                   <div>{restaurant.phone}</div>
-                  <div className="font-medium">
-                    {openState.label}
-                  </div>
+                  <div className="font-medium">{openState.label}</div>
                 </div>
               </div>
             </div>
@@ -325,7 +339,6 @@ export default function RestaurantPage({
         </div>
       </section>
 
-      {/* CATEGORY NAV */}
       {grouped.length > 0 ? (
         <div className="sticky top-2 z-20 overflow-x-auto rounded-2xl border bg-white p-3 shadow-sm">
           <div className="flex gap-2">
@@ -342,7 +355,6 @@ export default function RestaurantPage({
         </div>
       ) : null}
 
-      {/* MENU */}
       <div className="space-y-10">
         {grouped.map(([categoryName, categoryItems]) => (
           <section
@@ -370,18 +382,18 @@ export default function RestaurantPage({
                     className="group overflow-hidden rounded-[30px] border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                   >
                     <div className="h-48 w-full overflow-hidden bg-zinc-100">
-  {item.image_url ? (
-    <img
-      src={item.image_url}
-      alt={item.name}
-      className="h-full w-full object-contain p-5"
-    />
-  ) : (
-    <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
-      Geen foto
-    </div>
-  )}
-</div>
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-full w-full object-cover object-center"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
+                          Geen foto
+                        </div>
+                      )}
+                    </div>
 
                     <div className="space-y-4 p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -391,17 +403,16 @@ export default function RestaurantPage({
                           </div>
 
                           <div className="mt-2 text-sm leading-6 text-zinc-600">
-                            {item.description ??
-                              "Geen beschrijving"}
+                            {item.description ?? "Geen beschrijving"}
                           </div>
                         </div>
 
-                        <div className="rounded-full bg-black px-3 py-1 text-sm font-semibold text-white shadow-sm">
+                        <div className="shrink-0 rounded-full bg-black px-3 py-1 text-sm font-semibold text-white shadow-sm">
                           {Number(item.price).toFixed(2)} MAD
                         </div>
                       </div>
 
-                      <div className="mt-5 flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => addToCart(item)}
                           disabled={!openState.isOpen}
@@ -413,9 +424,7 @@ export default function RestaurantPage({
                         {qty > 0 ? (
                           <>
                             <button
-                              onClick={() =>
-                                removeFromCart(item.id)
-                              }
+                              onClick={() => removeFromCart(item.id)}
                               className="rounded-xl border px-3 py-2 text-sm hover:bg-zinc-50"
                             >
                               -
@@ -444,14 +453,54 @@ export default function RestaurantPage({
         ))}
       </div>
 
-      {/* FLOATING CART */}
+      <section className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Reviews</h2>
+
+          <div className="text-sm text-zinc-500">
+            {reviews.length} review(s)
+          </div>
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="rounded-3xl border bg-white p-6 text-sm text-zinc-500 shadow-sm">
+            Nog geen reviews.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-3xl border bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold">
+                    {review.customer_name ?? "Anoniem"}
+                  </div>
+
+                  <div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium">
+                    ⭐ {review.rating}
+                  </div>
+                </div>
+
+                <div className="mt-3 text-sm leading-6 text-zinc-600">
+                  {review.review}
+                </div>
+
+                <div className="mt-4 text-xs text-zinc-400">
+                  {new Date(review.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="fixed bottom-5 left-1/2 z-50 w-full max-w-md -translate-x-1/2 px-4">
         <div className="rounded-2xl border bg-white p-4 shadow-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium">
-                {cartCount} item(s)
-              </div>
+              <div className="text-sm font-medium">{cartCount} item(s)</div>
 
               <div className="text-sm text-zinc-600">
                 {subtotal.toFixed(2)} MAD
@@ -460,15 +509,12 @@ export default function RestaurantPage({
 
             {belowMinimum ? (
               <div className="text-right text-xs text-amber-700">
-                Voeg nog{" "}
-                {remaining.toFixed(2)} MAD toe
+                Voeg nog {remaining.toFixed(2)} MAD toe
               </div>
             ) : null}
           </div>
 
-          {cartCount > 0 &&
-          openState.isOpen &&
-          !belowMinimum ? (
+          {cartCount > 0 && openState.isOpen && !belowMinimum ? (
             <Link
               href={checkoutHref}
               className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"

@@ -4,10 +4,28 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import HomeSearch from "./components/HomeSearch";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import RestaurantCard from "./components/RestaurantCard";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { translations, Language } from "@/lib/translations";
+import { getOpenState } from "@/lib/openingHours";
+
+type Restaurant = {
+  id: number;
+  name: string;
+  address: string | null;
+  delivery_fee: number | null;
+  logo_url: string | null;
+  cover_url: string | null;
+  rating: number | null;
+  eta_min: number | null;
+  opening_hours: unknown;
+  is_active: boolean | null;
+};
 
 export default function HomePage() {
   const [language, setLanguage] = useState<Language>("fr");
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [loadingRestaurants, setLoadingRestaurants] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("language");
@@ -15,11 +33,29 @@ export default function HomePage() {
     if (saved) {
       setLanguage(saved as Language);
     }
+
+    loadRestaurants();
   }, []);
 
   function changeLanguage(lang: Language) {
     setLanguage(lang);
     localStorage.setItem("language", lang);
+  }
+
+  async function loadRestaurants() {
+    setLoadingRestaurants(true);
+
+    const { data } = await supabaseBrowser
+      .from("restaurants")
+      .select(
+        "id, name, address, delivery_fee, logo_url, cover_url, rating, eta_min, opening_hours, is_active"
+      )
+      .eq("is_active", true)
+      .order("rating", { ascending: false })
+      .limit(6);
+
+    setRestaurants((data as Restaurant[]) ?? []);
+    setLoadingRestaurants(false);
   }
 
   const t = translations[language];
@@ -182,6 +218,42 @@ export default function HomePage() {
               Discover popular local restaurants.
             </p>
           </div>
+
+          {loadingRestaurants ? (
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="h-72 animate-pulse rounded-[28px] border bg-white shadow-sm"
+                />
+              ))}
+            </div>
+          ) : restaurants.length === 0 ? (
+            <div className="mt-6 rounded-3xl border bg-white p-6 text-sm text-zinc-500 shadow-sm">
+              Nog geen restaurants beschikbaar.
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {restaurants.map((restaurant) => {
+                const openState = getOpenState(restaurant.opening_hours);
+
+                return (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    id={restaurant.id}
+                    name={restaurant.name}
+                    address={restaurant.address}
+                    logoUrl={restaurant.logo_url}
+                    coverUrl={restaurant.cover_url}
+                    rating={restaurant.rating}
+                    etaMin={restaurant.eta_min}
+                    deliveryFee={restaurant.delivery_fee}
+                    isOpen={openState.isOpen}
+                  />
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </main>

@@ -531,23 +531,32 @@ export default function OrderPage({
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/"
-            className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-zinc-800"
-          >
-            Terug naar home
-          </Link>
+  <Link
+    href="/"
+    className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-zinc-800"
+  >
+    Terug naar home
+  </Link>
 
-          {String(order.payment_method ?? "").toLowerCase() ===
-          "online" ? (
-            <Link
-              href={`/return?order_id=${order.id}`}
-              className="rounded-md border px-4 py-2 text-sm hover:bg-zinc-50"
-            >
-              Bekijk betaling
-            </Link>
-          ) : null}
-        </div>
+  {String(order.payment_method ?? "").toLowerCase() ===
+  "online" ? (
+    <Link
+      href={`/return?order_id=${order.id}`}
+      className="rounded-md border px-4 py-2 text-sm hover:bg-zinc-50"
+    >
+      Bekijk betaling
+    </Link>
+  ) : null}
+
+  {String(order.status).toLowerCase() === "delivered" ? (
+    <Link
+      href={`/order/${order.id}/review`}
+      className="rounded-md border px-4 py-2 text-sm hover:bg-zinc-50"
+    >
+      Schrijf review
+    </Link>
+  ) : null}
+</div>
       </div>
     </div>
   );
